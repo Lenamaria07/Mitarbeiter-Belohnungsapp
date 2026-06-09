@@ -96,6 +96,8 @@ async def lifespan(app: FastAPI):
         db.close()
     yield
 
+
+
 app = FastAPI(lifespan=lifespan)
 templates = Jinja2Templates(directory="templates")
 

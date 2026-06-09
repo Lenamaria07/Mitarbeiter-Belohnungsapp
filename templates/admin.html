@@ -1,0 +1,163 @@
+{% extends "base.html" %}
+
+{% block title %}Admin - Mitarbeiter verwalten{% endblock %}
+
+{% block content %}
+<main class="max-w-6xl w-full mx-auto px-4 py-8 grid md:grid-cols-3 gap-8">
+    
+    <div class="md:col-span-1 flex flex-col gap-6">
+        <div class="bg-white border border-slate-100 shadow-md rounded-2xl p-6">
+            <h2 class="text-lg font-bold text-slate-900 mb-1 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-indigo-600"></i> Mitarbeiter anlegen
+            </h2>
+            <p class="text-xs text-slate-400 mb-6 font-medium">Fügen Sie einen neuen Kollegen dem System hinzu.</p>
+
+            <form action="/create_user" method="post" class="flex flex-col gap-4">
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Anzeigename</label>
+                    <input type="text" name="name" required placeholder="z.B. Max Mustermann" class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none text-sm transition font-medium">
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Benutzername (Login)</label>
+                    <input type="text" name="username" required placeholder="z.B. max.mustermann" class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none text-sm transition font-medium">
+                </div>
+
+                <div class="flex flex-col gap-1.5">
+                    <label class="text-xs font-bold text-slate-600 uppercase tracking-wider">Passwort</label>
+                    <input type="password" name="password" required placeholder="••••••••" class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none text-sm transition font-medium">
+                </div>
+
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition shadow-md shadow-indigo-100 text-sm flex items-center justify-center gap-2 mt-2">
+                    Mitarbeiter speichern <i class="fa-solid fa-floppy-disk text-xs"></i>
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <div class="md:col-span-2">
+        <div class="bg-white border border-slate-100 shadow-md rounded-2xl overflow-hidden">
+            <div class="p-6 border-b border-slate-100">
+                <h2 class="text-lg font-bold text-slate-900 flex items-center gap-2">
+                    <i class="fa-solid fa-users text-indigo-600"></i> Registrierte Mitarbeiter
+                </h2>
+                <p class="text-xs text-slate-400 mt-1 font-medium">Gesamtübersicht über alle Profile, deren aktuelle Scores und den zuletzt ausgezahlten Bonus.</p>
+            </div>
+
+            {% if not employees %}
+            <div class="p-12 text-center text-slate-400">
+                <i class="fa-solid fa-folder-open text-3xl mb-3 block text-slate-300"></i>
+                <p class="text-sm font-medium">Noch keine Mitarbeiter registriert.</p>
+            </div>
+            {% else %}
+            <div class="overflow-x-auto">
+                <table class="w-full text-left border-collapse">
+                    <thead>
+                        <tr class="bg-slate-50/70 border-b border-slate-100 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                            <th class="px-6 py-3">Mitarbeiter</th>
+                            <th class="px-4 py-3 text-center">Positiv</th>
+                            <th class="px-4 py-3 text-center">Negativ</th>
+                            <th class="px-4 py-3 text-center">Letzter Bonus</th>
+                            <th class="px-6 py-3 text-right">Aktionen</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100 text-sm font-medium text-slate-700">
+                        {% for emp in employees %}
+                        <tr class="hover:bg-slate-50/50 transition-colors">
+                            <td class="px-6 py-4">
+                                <div class="font-bold text-slate-900">{{ emp.name }}</div>
+                                <div class="text-xs text-slate-400 font-normal">@{{ emp.username }} &middot; Rolle: {{ emp.role }}</div>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex items-center gap-1 bg-emerald-50 text-emerald-700 px-2.5 py-1 rounded-full text-xs font-bold">
+                                    <i class="fa-solid fa-thumbs-up text-[10px]"></i> {{ emp.positive_score if emp.positive_score is not none else 0 }}
+                                </span>
+                            </td>
+                            <td class="px-4 py-4 text-center">
+                                <span class="inline-flex items-center gap-1 bg-rose-50 text-rose-700 px-2.5 py-1 rounded-full text-xs font-bold">
+                                    <i class="fa-solid fa-thumbs-down text-[10px]"></i> {{ emp.negative_score if emp.negative_score is not none else 0 }}
+                                </span>
+                            </td>
+                            
+                            <td class="px-4 py-4 text-center font-mono font-bold text-slate-900 text-xs">
+                                <span class="inline-flex items-center gap-1 {% if emp.last_month_bonus > 0 %}bg-amber-50 text-amber-700 px-2.5 py-1 rounded-xl border border-amber-100{% else %}text-slate-400{% endif %}">
+                                    <i class="fa-solid fa-coins text-amber-500"></i> {{ "%.2f"|format(emp.last_month_bonus) }} CHF
+                                </span>
+                            </td>
+                            
+                            <td class="px-6 py-4 text-right">
+                                <div class="flex items-center justify-end gap-3">
+                                    
+                                    <a href="/dashboard/{% if emp.id %}{{ emp.id }}{% endif %}" class="text-xs font-bold text-indigo-600 hover:text-indigo-800 transition whitespace-nowrap">
+                                        Dashboard
+                                    </a>
+                                    
+                                    {% if emp.id != current_user.id %}
+                                    
+                                    <button onclick="openAdminResetModal('{{ emp.id }}', '{{ emp.name }}')" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-indigo-50 text-slate-600 hover:text-indigo-600 flex items-center justify-center transition cursor-pointer" title="Passwort neu setzen">
+                                        <i class="fa-solid fa-key text-xs"></i>
+                                    </button>
+
+                                    <form action="/admin/delete_user/{{ emp.id }}" method="post" onsubmit="return confirm('Mitarbeiter {{ emp.name }} wirklich unwiderruflich löschen?');" class="inline">
+                                        <button type="submit" class="w-8 h-8 rounded-xl bg-slate-100 hover:bg-rose-50 text-slate-600 hover:text-rose-600 flex items-center justify-center transition cursor-pointer" title="Mitarbeiter löschen">
+                                            <i class="fa-solid fa-trash-can text-xs"></i>
+                                        </button>
+                                    </form>
+
+                                    {% else %}
+                                    <span class="text-xs text-slate-400 italic px-2">Du</span>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</main>
+
+<div id="adminResetModal" class="fixed inset-0 bg-slate-900/40 backdrop-blur-sm hidden items-center justify-center z-50 p-4">
+    <div class="bg-white border border-slate-100 shadow-2xl rounded-3xl p-6 max-w-sm w-full relative">
+        <button onclick="closeAdminResetModal()" class="absolute top-4 right-4 text-slate-400 hover:text-slate-600 transition text-lg cursor-pointer">
+            <i class="fa-solid fa-xmark"></i>
+        </button>
+        
+        <h3 class="text-base font-bold text-slate-900 mb-1 flex items-center gap-2">
+            <i class="fa-solid fa-key text-indigo-600"></i> Passwort überschreiben
+        </h3>
+        <p class="text-xs text-slate-400 mb-4 font-medium">Neues Passwort vergeben für: <strong id="resetTargetName" class="text-slate-700"></strong></p>
+
+        <form id="adminResetForm" action="" method="post">
+            <div class="flex flex-col gap-1.5 mb-4">
+                <label class="text-[11px] font-bold text-slate-600 uppercase tracking-wider">Neues Passwort festlegen</label>
+                <input type="password" name="new_password" required placeholder="••••••••" class="block w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2.5 text-slate-800 focus:border-indigo-500 focus:bg-white focus:outline-none text-sm transition font-medium">
+            </div>
+            <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2.5 px-4 rounded-xl transition text-sm shadow-md flex items-center justify-center gap-1.5 cursor-pointer">
+                Passwort speichern <i class="fa-solid fa-floppy-disk text-xs"></i>
+            </button>
+        </form>
+    </div>
+</div>
+
+<script>
+function openAdminResetModal(userId, userName) {
+    const modal = document.getElementById('adminResetModal');
+    const form = document.getElementById('adminResetForm');
+    const nameLabel = document.getElementById('resetTargetName');
+    
+    if (modal && form && nameLabel) {
+        nameLabel.textContent = userName;
+        form.action = `/admin/reset_password/${userId}`;
+        modal.style.display = 'flex';
+    }
+}
+
+function closeAdminResetModal() {
+    const modal = document.getElementById('adminResetModal');
+    if (modal) modal.style.display = 'none';
+}
+</script>
+{% endblock %}
